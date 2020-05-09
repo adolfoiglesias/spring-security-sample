@@ -1,5 +1,7 @@
-package com.calarix.security;
+package com.calarix.security.controller;
 
+import com.calarix.security.domain.User;
+import com.calarix.security.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;

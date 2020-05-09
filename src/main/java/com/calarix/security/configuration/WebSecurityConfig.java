@@ -1,85 +1,104 @@
 package com.calarix.security.configuration;
 
+import com.calarix.security.security.CustomUserDetailsService;
+import com.calarix.security.security.JwtAuthenticationEntryPoint;
+import com.calarix.security.security.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.thymeleaf.extras.springsecurity5.dialect.SpringSecurityDialect;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 
 @Configuration
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(securedEnabled = true,jsr250Enabled = true,prePostEnabled = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    public final static String ROL_ADMIN = "ADMIN";
-    public final static String ROL_INVITADO = "INVITADO";
+    @Autowired
+    CustomUserDetailsService customUserDetailsService;
 
+    @Autowired
+    private JwtAuthenticationEntryPoint unauthorizedHandler;
+
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter();
+    }
+    @Bean(BeanIds.AUTHENTICATION_MANAGER)
     @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http
-                .authorizeRequests()
-                    /*.antMatchers("/", "/home").permitAll()*/
-                    .antMatchers("/", "/home", "/users", "users/show").hasAnyRole("ADMIN", "INVITADO")
-                    .antMatchers("/users/new", "users/remove").hasAnyRole("ADMIN")
-                    .anyRequest().authenticated()
-                .and()
-                .formLogin()
-                /*.loginPage("/login") -> usnado el login por defecto de spring secruty*/
-                    .permitAll()
-                .and()
-                .logout()
-                    .permitAll();
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
     }
 
-    /*
     @Bean
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
+    }
+
     @Override
-    public UserDetailsService userDetailsService() {
-        UserDetails user =
-                User.withDefaultPasswordEncoder()
-                        .username("admin")
-                        .password("admin")
-                        .roles("ADMIN")
-                        .build();
-        UserDetails user2 =
-                User.withDefaultPasswordEncoder()
-                        .username("invitado")
-                        .password("invitado")
-                        .roles("INVITADO")
-                        .build();
-
-        return new InMemoryUserDetailsManager(user, user2);
-    }*/
-
+    public void configure(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
+        authenticationManagerBuilder
+                .userDetailsService(customUserDetailsService)
+                .passwordEncoder(passwordEncoder());
+    }
+/*
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.inMemoryAuthentication()
                 .withUser("admin")
-                    .password(passwordEncoder().encode("admin"))
-                    .roles(ROL_ADMIN)
+                .password(passwordEncoder().encode("admin"))
+                .roles(ROL_ADMIN)
                 .and()
                 .withUser("invitado")
-                    .password(passwordEncoder().encode("invitado"))
-                    .roles(ROL_INVITADO);
-    }
-    @Bean
-    public BCryptPasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder();
-    }
+                .password(passwordEncoder().encode("invitado"))
+                .roles(ROL_INVITADO);
+    }*/
 
-    /**
-     * Dialect for SPring Secutiry tag in html page
-     * @return
-     */
-    @Bean
-    public SpringSecurityDialect springSecurityDialect(){
-        return new SpringSecurityDialect();
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+                .cors()
+                .and()
+                .csrf()
+                .disable()
+                .exceptionHandling()
+                    .authenticationEntryPoint(unauthorizedHandler)
+                .and()
+                    .sessionManagement()
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                    .authorizeRequests()
+                    .antMatchers("/",
+                        "/favicon.ico",
+                        "/**/*.png",
+                        "/**/*.gif",
+                        "/**/*.svg",
+                        "/**/*.jpg",
+                        "/**/*.html",
+                        "/**/*.css",
+                        "/**/*.js")
+                    .permitAll()
+                    .antMatchers("/api/auth/**")
+                    .permitAll()
+                    .antMatchers("/api/user/checkUsernameAvailability",
+                            "/api/user/checkEmailAvailability")
+                    .permitAll()
+                .anyRequest()
+                .authenticated();
+
+        // Add our custom JWT security filter
+        http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+
     }
 
 }

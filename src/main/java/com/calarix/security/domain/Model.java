@@ -1,20 +1,17 @@
-package com.calarix.security;
+package com.calarix.security.domain;
 
 import lombok.Data;
 
-import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 
 @Data
-@Entity
-public class User {
+@MappedSuperclass
+public class Model {
+
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
-    private Long id;
-
-    private String email;
-    private String name;
-
+    protected Long id;
 }
