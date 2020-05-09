@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <h1>Welcome!</h1>
+    <p>
+        <!--
+            <a th:href="@{/login}" th:if="${httpServletRequest.remoteUser}">Iniciar sesión</a>
+            <a th:href="@{/logout}" th:if="${httpServletRequest.remoteUser}">Cerrar sesión</a>
+        -->
+        <h1 >Hello [[${#httpServletRequest.remoteUser}]]!</h1>
+        <h2 sec:authentication="principal.authorities">Tus roles son: </h2>
+        <!-- <a th:href="@{/logout}" >Cerrar sesión</a> -->
+
+        <form th:action="@{/logout}" method="post">
+            <input type="submit" value="Cerrar sesión"/>
+        </form>
+
+    </p>
+    <h2>Usuarios</h2>
+    <em>"Historial de usuarios" lo ven todos los usuarios con roles: 'ADMIN' e 'INVITADO'</em>
+    <br>
+    <em>"Crear usuario" lo ven todos los usuarios con rol: 'ADMIN'</em>
+    <ul>
+        <li th:if="${#authorization.expression('hasRole(''ADMIN'')')
+                    || #authorization.expression('hasRole(''INVITADO'')')}">
+            <a th:href="@{/users}">Historial de usuarios</a></li>
+
+        <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+            <a th:href="@{/users/new}">Crear nuevo usuario</a>
+        </li>
+    </ul>
+
+    <!--
+        <div th:if="${#authorization.expression('isAuthenticated()')}">
+            Text visible only to authenticated users.
+        </div>
+    -->
+</body>
+</html>
